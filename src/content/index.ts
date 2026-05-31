@@ -10,16 +10,11 @@ initialize();
 function initialize(): void {
   injectToolbar();
   observeRouteChanges();
+  observeYouTubeDom();
 }
 
 function injectToolbar(): void {
   if (document.getElementById(ROOT_ID) || !isWatchPage()) {
-    return;
-  }
-
-  const host = document.querySelector("#below") ?? document.querySelector("#primary");
-  if (!host) {
-    window.setTimeout(injectToolbar, 500);
     return;
   }
 
@@ -42,7 +37,7 @@ function injectToolbar(): void {
     void handleAction(button.dataset.action ?? "");
   });
 
-  host.prepend(toolbar);
+  document.documentElement.append(toolbar);
 }
 
 function observeRouteChanges(): void {
@@ -54,6 +49,15 @@ function observeRouteChanges(): void {
     currentUrl = location.href;
     resetTranslations();
     window.setTimeout(injectToolbar, 500);
+  });
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+}
+
+function observeYouTubeDom(): void {
+  const observer = new MutationObserver(() => {
+    if (!document.getElementById(ROOT_ID) && isWatchPage()) {
+      injectToolbar();
+    }
   });
   observer.observe(document.documentElement, { childList: true, subtree: true });
 }
@@ -105,7 +109,12 @@ function collectTargets(action: string): Array<{ item: TranslationItem; element:
 }
 
 function collectDescription(): Array<{ item: TranslationItem; element: HTMLElement }> {
-  const selectors = ["#description-inline-expander", "ytd-text-inline-expander", "#description"];
+  const selectors = [
+    "#description-inline-expander",
+    "ytd-text-inline-expander",
+    "#description",
+    "ytd-watch-metadata #description"
+  ];
   const element = selectors
     .map((selector) => document.querySelector<HTMLElement>(selector))
     .find((candidate) => candidate && candidate.innerText.trim().length > 0);
@@ -118,17 +127,22 @@ function collectDescription(): Array<{ item: TranslationItem; element: HTMLEleme
 }
 
 function collectComments(): Array<{ item: TranslationItem; element: HTMLElement }> {
-  const comments = Array.from(
-    document.querySelectorAll<HTMLElement>("ytd-comment-thread-renderer #content-text")
-  );
+  const comments = uniqueElements([
+    ...document.querySelectorAll<HTMLElement>("ytd-comment-thread-renderer #content-text"),
+    ...document.querySelectorAll<HTMLElement>("ytd-comment-view-model #content-text"),
+    ...document.querySelectorAll<HTMLElement>("ytd-comment-view-model yt-attributed-string#content-text"),
+    ...document.querySelectorAll<HTMLElement>("#comments #content-text"),
+    ...document.querySelectorAll<HTMLElement>("ytd-engagement-panel-section-list-renderer #content-text")
+  ]);
 
   return comments
-    .filter((element) => !hasTranslation(element) && element.innerText.trim().length > 0)
-    .slice(0, 30)
+    .filter((element) => isVisible(element))
+    .filter((element) => !hasTranslation(element) && getElementText(element).length > 0)
+    .slice(0, 50)
     .map((element, index) => ({
       item: {
         id: `comment-${index}`,
-        text: element.innerText.trim()
+        text: getElementText(element)
       },
       element
     }));
@@ -164,6 +178,19 @@ function renderTranslation(anchor: HTMLElement, text: string): void {
 
 function hasTranslation(element: HTMLElement): boolean {
   return element.nextElementSibling?.classList.contains(TRANSLATION_CLASS) ?? false;
+}
+
+function uniqueElements(elements: HTMLElement[]): HTMLElement[] {
+  return Array.from(new Set(elements));
+}
+
+function getElementText(element: HTMLElement): string {
+  return (element.innerText || element.textContent || "").trim();
+}
+
+function isVisible(element: HTMLElement): boolean {
+  const rect = element.getBoundingClientRect();
+  return rect.width > 0 && rect.height > 0;
 }
 
 function resetTranslations(): void {
