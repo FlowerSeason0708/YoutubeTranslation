@@ -1,0 +1,52 @@
+#yt-page-translator-toolbar {
+  background: #0f0f0f;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  box-sizing: border-box;
+  color: #fff;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin: 12px 0;
+  padding: 10px 12px;
+  width: 100%;
+}
+
+#yt-page-translator-toolbar .ytpt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+#yt-page-translator-toolbar button {
+  background: #fff;
+  border: 0;
+  border-radius: 6px;
+  color: #0f0f0f;
+  cursor: pointer;
+  font: 500 13px/1.2 Roboto, Arial, sans-serif;
+  min-height: 32px;
+  padding: 0 12px;
+}
+
+#yt-page-translator-toolbar button:hover {
+  background: #e6e6e6;
+}
+
+#yt-page-translator-toolbar .ytpt-status {
+  align-self: center;
+  color: #cfcfcf;
+  font: 400 13px/1.4 Roboto, Arial, sans-serif;
+  min-width: 120px;
+  text-align: right;
+}
+
+.ytpt-translation {
+  background: rgba(6, 95, 70, 0.1);
+  border-left: 3px solid #0f766e;
+  color: #0f513f;
+  font: 400 14px/1.5 Roboto, Arial, sans-serif;
+  margin: 8px 0;
+  padding: 8px 10px;
+  white-space: pre-wrap;
+}

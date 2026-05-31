@@ -1,0 +1,32 @@
+body {
+  color: #15171a;
+  font: 14px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  margin: 0;
+  width: 280px;
+}
+
+main {
+  padding: 14px;
+}
+
+h1 {
+  font-size: 18px;
+  margin: 0 0 8px;
+}
+
+p {
+  color: #4f5b67;
+  margin: 0 0 14px;
+}
+
+button {
+  background: #0f766e;
+  border: 0;
+  border-radius: 6px;
+  color: #fff;
+  cursor: pointer;
+  font: 650 14px/1 system-ui, sans-serif;
+  min-height: 34px;
+  padding: 0 12px;
+  width: 100%;
+}

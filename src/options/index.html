@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>YouTube Translator Settings</title>
+  </head>
+  <body>
+    <main class="settings">
+      <h1>YouTube Translator</h1>
+      <form id="settings-form">
+        <label>
+          Provider
+          <select id="provider" name="provider">
+            <option value="mimo">MiMo</option>
+            <option value="openai">OpenAI</option>
+          </select>
+        </label>
+        <label>
+          API Key
+          <input id="apiKey" name="apiKey" type="password" autocomplete="off" />
+        </label>
+        <label>
+          Model
+          <input id="model" name="model" type="text" />
+        </label>
+        <label>
+          Target language
+          <input id="targetLanguage" name="targetLanguage" type="text" />
+        </label>
+        <label class="checkbox">
+          <input id="showOriginal" name="showOriginal" type="checkbox" />
+          Show original text
+        </label>
+        <button type="submit">保存设置</button>
+        <p id="status" role="status"></p>
+      </form>
+    </main>
+    <script type="module" src="./index.ts"></script>
+  </body>
+</html>

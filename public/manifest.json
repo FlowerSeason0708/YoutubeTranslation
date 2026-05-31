@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube Page Translator",
+  "version": "0.1.0",
+  "description": "Translate YouTube descriptions, comments, and available captions with OpenAI or MiMo.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://www.youtube.com/*",
+    "https://api.openai.com/*",
+    "https://api.mimo-v2.com/*"
+  ],
+  "background": {
+    "service_worker": "assets/background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/watch*"],
+      "js": ["assets/content.js"],
+      "css": ["assets/content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "options_page": "src/options/index.html",
+  "action": {
+    "default_title": "YouTube Translator",
+    "default_popup": "src/popup/index.html"
+  }
+}
