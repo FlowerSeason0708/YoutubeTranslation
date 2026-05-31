@@ -51,6 +51,11 @@ class OpenAIResponsesProvider implements TranslatorProvider {
 }
 
 class MiMoChatProvider implements TranslatorProvider {
+  private readonly endpoints = [
+    "https://api.mimo-v2.com/v1/chat/completions",
+    "https://api.xiaomimimo.com/v1/chat/completions"
+  ];
+
   constructor(
     private readonly settings: TranslatorSettings,
     private readonly fetcher: Fetcher
@@ -62,31 +67,45 @@ class MiMoChatProvider implements TranslatorProvider {
       items
     });
 
-    const response = await this.fetcher("https://api.mimo-v2.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${this.settings.apiKey}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: this.settings.model,
-        messages: [
-          {
-            role: "system",
-            content: "You are a precise translation engine."
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        temperature: 0.2
-      })
+    const response = await this.fetchWithFallback({
+      model: this.settings.model,
+      messages: [
+        {
+          role: "system",
+          content: "You are a precise translation engine."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      temperature: 0.2
     });
 
     const json = await parseApiResponse(response);
     const text = extractChatText(json);
     return parseTranslatedItems(text, items.map((item) => item.id));
+  }
+
+  private async fetchWithFallback(body: unknown): Promise<Response> {
+    let lastError: unknown;
+
+    for (const endpoint of this.endpoints) {
+      try {
+        return await this.fetcher(endpoint, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${this.settings.apiKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(body)
+        });
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    throw normalizeNetworkError(lastError);
   }
 }
 
@@ -126,4 +145,11 @@ function extractChatText(json: unknown): string {
 function extractApiError(json: unknown): string | undefined {
   const error = (json as { error?: { message?: unknown } } | null)?.error;
   return typeof error?.message === "string" ? error.message : undefined;
+}
+
+function normalizeNetworkError(error: unknown): Error {
+  if (error instanceof Error && error.message.includes("Failed to fetch")) {
+    return new Error("网络连接失败：无法连接翻译 API。MiMo 默认域名在当前网络下可能不可用，请检查网络/代理，或切换到 OpenAI Provider。");
+  }
+  return error instanceof Error ? error : new Error("Network request failed.");
 }
