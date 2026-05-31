@@ -1,11 +1,14 @@
 {
   "manifest_version": 3,
-  "name": "YouTube Page Translator",
+  "name": "Social Page Translator",
   "version": "0.1.0",
-  "description": "Translate YouTube descriptions, comments, and available captions with OpenAI or MiMo.",
+  "description": "Translate YouTube, Instagram, and X page text with OpenAI or MiMo.",
   "permissions": ["storage"],
   "host_permissions": [
     "https://www.youtube.com/*",
+    "https://www.instagram.com/*",
+    "https://x.com/*",
+    "https://twitter.com/*",
     "https://api.openai.com/*",
     "https://api.mimo-v2.com/*",
     "https://api.xiaomimimo.com/*"
@@ -16,7 +19,12 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://www.youtube.com/watch*"],
+      "matches": [
+        "https://www.youtube.com/watch*",
+        "https://www.instagram.com/*",
+        "https://x.com/*",
+        "https://twitter.com/*"
+      ],
       "js": ["assets/content.js"],
       "css": ["assets/content.css"],
       "run_at": "document_idle"
@@ -24,7 +32,7 @@
   ],
   "options_page": "src/options/index.html",
   "action": {
-    "default_title": "YouTube Translator",
+    "default_title": "Social Translator",
     "default_popup": "src/popup/index.html"
   }
 }

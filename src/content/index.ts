@@ -1,7 +1,7 @@
 import type { TranslateMessage, TranslateResponse, TranslationItem } from "../shared/types";
 import "./styles.css";
 
-const ROOT_ID = "yt-page-translator-toolbar";
+const ROOT_ID = "social-translator-toolbar";
 const TRANSLATION_CLASS = "ytpt-translation";
 let currentUrl = "";
 
@@ -10,11 +10,11 @@ initialize();
 function initialize(): void {
   injectToolbar();
   observeRouteChanges();
-  observeYouTubeDom();
+  observeDom();
 }
 
 function injectToolbar(): void {
-  if (document.getElementById(ROOT_ID) || !isWatchPage()) {
+  if (document.getElementById(ROOT_ID) || !isSupportedPage()) {
     return;
   }
 
@@ -22,9 +22,7 @@ function injectToolbar(): void {
   toolbar.id = ROOT_ID;
   toolbar.innerHTML = `
     <div class="ytpt-actions">
-      <button type="button" data-action="description">翻译简介</button>
-      <button type="button" data-action="comments">翻译评论</button>
-      <button type="button" data-action="captions">翻译字幕</button>
+      ${renderButtons()}
     </div>
     <div class="ytpt-status" aria-live="polite">准备就绪</div>
   `;
@@ -40,6 +38,22 @@ function injectToolbar(): void {
   document.documentElement.append(toolbar);
 }
 
+function renderButtons(): string {
+  if (isYouTubeWatchPage()) {
+    return `
+      <button type="button" data-action="description">翻译简介</button>
+      <button type="button" data-action="comments">翻译评论</button>
+      <button type="button" data-action="captions">翻译字幕</button>
+    `;
+  }
+
+  if (isInstagramPage()) {
+    return `<button type="button" data-action="instagram-visible">翻译当前 Ins 文本</button>`;
+  }
+
+  return `<button type="button" data-action="x-visible">翻译当前 X 文本</button>`;
+}
+
 function observeRouteChanges(): void {
   currentUrl = location.href;
   const observer = new MutationObserver(() => {
@@ -53,9 +67,9 @@ function observeRouteChanges(): void {
   observer.observe(document.documentElement, { childList: true, subtree: true });
 }
 
-function observeYouTubeDom(): void {
+function observeDom(): void {
   const observer = new MutationObserver(() => {
-    if (!document.getElementById(ROOT_ID) && isWatchPage()) {
+    if (!document.getElementById(ROOT_ID) && isSupportedPage()) {
       injectToolbar();
     }
   });
@@ -64,8 +78,8 @@ function observeYouTubeDom(): void {
 
 async function handleAction(action: string): Promise<void> {
   try {
-    if (!isWatchPage()) {
-      setStatus("仅支持 YouTube 视频页。");
+    if (!isSupportedPage()) {
+      setStatus("当前网站暂不支持。");
       return;
     }
 
@@ -100,10 +114,16 @@ function collectTargets(action: string): Array<{ item: TranslationItem; element:
     return collectDescription();
   }
   if (action === "comments") {
-    return collectComments();
+    return collectYouTubeComments();
   }
   if (action === "captions") {
     return collectCaptions();
+  }
+  if (action === "instagram-visible") {
+    return collectInstagramText();
+  }
+  if (action === "x-visible") {
+    return collectXText();
   }
   return [];
 }
@@ -117,16 +137,16 @@ function collectDescription(): Array<{ item: TranslationItem; element: HTMLEleme
   ];
   const element = selectors
     .map((selector) => document.querySelector<HTMLElement>(selector))
-    .find((candidate) => candidate && candidate.innerText.trim().length > 0);
+    .find((candidate) => candidate && getElementText(candidate).length > 0);
 
   if (!element || hasTranslation(element)) {
     return [];
   }
 
-  return [{ item: { id: "description", text: element.innerText.trim() }, element }];
+  return [{ item: { id: "description", text: getElementText(element) }, element }];
 }
 
-function collectComments(): Array<{ item: TranslationItem; element: HTMLElement }> {
+function collectYouTubeComments(): Array<{ item: TranslationItem; element: HTMLElement }> {
   const comments = uniqueElements([
     ...document.querySelectorAll<HTMLElement>("ytd-comment-thread-renderer #content-text"),
     ...document.querySelectorAll<HTMLElement>("ytd-comment-view-model #content-text"),
@@ -135,17 +155,7 @@ function collectComments(): Array<{ item: TranslationItem; element: HTMLElement 
     ...document.querySelectorAll<HTMLElement>("ytd-engagement-panel-section-list-renderer #content-text")
   ]);
 
-  return comments
-    .filter((element) => isVisible(element))
-    .filter((element) => !hasTranslation(element) && getElementText(element).length > 0)
-    .slice(0, 50)
-    .map((element, index) => ({
-      item: {
-        id: `comment-${index}`,
-        text: getElementText(element)
-      },
-      element
-    }));
+  return toTranslationTargets(comments, "youtube-comment", 50);
 }
 
 function collectCaptions(): Array<{ item: TranslationItem; element: HTMLElement }> {
@@ -153,7 +163,7 @@ function collectCaptions(): Array<{ item: TranslationItem; element: HTMLElement 
   const unique = new Map<string, HTMLElement>();
 
   for (const caption of captions) {
-    const text = caption.innerText.trim();
+    const text = getElementText(caption);
     if (text && !unique.has(text) && !hasTranslation(caption)) {
       unique.set(text, caption);
     }
@@ -163,6 +173,47 @@ function collectCaptions(): Array<{ item: TranslationItem; element: HTMLElement 
     item: { id: `caption-${index}`, text },
     element
   }));
+}
+
+function collectInstagramText(): Array<{ item: TranslationItem; element: HTMLElement }> {
+  const candidates = uniqueElements([
+    ...document.querySelectorAll<HTMLElement>("article h1"),
+    ...document.querySelectorAll<HTMLElement>("article span[dir='auto']"),
+    ...document.querySelectorAll<HTMLElement>("main article ul span[dir='auto']"),
+    ...document.querySelectorAll<HTMLElement>("main article div[role='button'] span[dir='auto']")
+  ]).filter((element) => !isInsideToolbar(element));
+
+  return toTranslationTargets(candidates, "instagram-text", 60);
+}
+
+function collectXText(): Array<{ item: TranslationItem; element: HTMLElement }> {
+  const candidates = uniqueElements([
+    ...document.querySelectorAll<HTMLElement>("article [data-testid='tweetText']"),
+    ...document.querySelectorAll<HTMLElement>("article div[lang]"),
+    ...document.querySelectorAll<HTMLElement>("[data-testid='cellInnerDiv'] [data-testid='tweetText']")
+  ]).filter((element) => !isInsideToolbar(element));
+
+  return toTranslationTargets(candidates, "x-text", 60);
+}
+
+function toTranslationTargets(
+  elements: HTMLElement[],
+  prefix: string,
+  limit: number
+): Array<{ item: TranslationItem; element: HTMLElement }> {
+  return elements
+    .filter((element) => isVisible(element))
+    .filter((element) => !hasTranslation(element))
+    .map((element) => ({ element, text: getElementText(element) }))
+    .filter(({ text }) => shouldTranslateText(text))
+    .slice(0, limit)
+    .map(({ element, text }, index) => ({
+      item: {
+        id: `${prefix}-${index}`,
+        text
+      },
+      element
+    }));
 }
 
 function renderTranslation(anchor: HTMLElement, text: string): void {
@@ -188,9 +239,21 @@ function getElementText(element: HTMLElement): string {
   return (element.innerText || element.textContent || "").trim();
 }
 
+function shouldTranslateText(text: string): boolean {
+  if (text.length < 2) {
+    return false;
+  }
+  const ignored = new Set(["更多", "回复", "关注", "查看全部", "显示更多", "Show more"]);
+  return !ignored.has(text);
+}
+
 function isVisible(element: HTMLElement): boolean {
   const rect = element.getBoundingClientRect();
   return rect.width > 0 && rect.height > 0;
+}
+
+function isInsideToolbar(element: HTMLElement): boolean {
+  return Boolean(element.closest(`#${ROOT_ID}`));
 }
 
 function resetTranslations(): void {
@@ -212,11 +275,23 @@ function sendTranslate(items: TranslationItem[]): Promise<TranslateResponse> {
 function formatError(error: unknown): string {
   const message = error instanceof Error ? error.message : "翻译失败。";
   if (message.includes("Extension context invalidated")) {
-    return "扩展刚更新过，请刷新当前 YouTube 页面后重试。";
+    return "扩展刚更新过，请刷新当前页面后重试。";
   }
   return message;
 }
 
-function isWatchPage(): boolean {
+function isSupportedPage(): boolean {
+  return isYouTubeWatchPage() || isInstagramPage() || isXPage();
+}
+
+function isYouTubeWatchPage(): boolean {
   return location.hostname === "www.youtube.com" && location.pathname === "/watch";
+}
+
+function isInstagramPage(): boolean {
+  return location.hostname === "www.instagram.com" || location.hostname === "instagram.com";
+}
+
+function isXPage(): boolean {
+  return ["x.com", "www.x.com", "twitter.com", "www.twitter.com"].includes(location.hostname);
 }

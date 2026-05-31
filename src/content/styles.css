@@ -1,4 +1,4 @@
-#yt-page-translator-toolbar {
+#social-translator-toolbar {
   background: #0f0f0f;
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 8px 0 0 8px;
@@ -18,13 +18,13 @@
   z-index: 2147483647;
 }
 
-#yt-page-translator-toolbar .ytpt-actions {
+#social-translator-toolbar .ytpt-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-#yt-page-translator-toolbar button {
+#social-translator-toolbar button {
   background: #fff;
   border: 0;
   border-radius: 6px;
@@ -35,11 +35,11 @@
   padding: 0 12px;
 }
 
-#yt-page-translator-toolbar button:hover {
+#social-translator-toolbar button:hover {
   background: #e6e6e6;
 }
 
-#yt-page-translator-toolbar .ytpt-status {
+#social-translator-toolbar .ytpt-status {
   align-self: center;
   color: #cfcfcf;
   font: 400 13px/1.4 Roboto, Arial, sans-serif;

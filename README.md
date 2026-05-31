@@ -1,6 +1,6 @@
-# YouTube Page Translator
+# Social Page Translator
 
-Chrome/Edge Manifest V3 extension for translating YouTube video descriptions, loaded comments, and visible YouTube captions into Simplified Chinese.
+Chrome/Edge Manifest V3 extension for translating visible page text on YouTube, Instagram, and X/Twitter into Simplified Chinese.
 
 ## Setup
 
@@ -25,11 +25,14 @@ Open the extension settings and configure:
 - Model
 - Target language
 
-MiMo defaults to `mimo-v2.5` and calls `https://api.mimo-v2.com/v1/chat/completions`.
+MiMo defaults to `mimo-v2.5` and calls `https://api.mimo-v2.com/v1/chat/completions`, with `https://api.xiaomimimo.com/v1/chat/completions` as a network fallback.
 OpenAI defaults to `gpt-5.4-mini` and calls `https://api.openai.com/v1/responses`.
 
 ## Current Scope
 
-- Supports YouTube watch pages only.
+- Supports YouTube watch pages, Instagram pages, and X/Twitter pages.
 - Translates manually by clicking the injected toolbar buttons.
-- Does not transcribe audio. Caption translation depends on YouTube captions already being available on the page.
+- YouTube: descriptions, loaded comments, and visible captions.
+- Instagram: visible post captions and comments in the current page.
+- X/Twitter: visible tweet text in the current page.
+- Does not transcribe audio or OCR text embedded inside images.
