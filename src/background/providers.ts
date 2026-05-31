@@ -6,8 +6,9 @@ export interface TranslatorProvider {
 }
 
 type Fetcher = typeof fetch;
+const defaultFetcher: Fetcher = (input, init) => fetch(input, init);
 
-export function createProvider(settings: TranslatorSettings, fetcher: Fetcher = fetch): TranslatorProvider {
+export function createProvider(settings: TranslatorSettings, fetcher: Fetcher = defaultFetcher): TranslatorProvider {
   if (!settings.apiKey.trim()) {
     throw new Error("API key is not configured.");
   }
