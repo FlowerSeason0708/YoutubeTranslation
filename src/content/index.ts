@@ -91,7 +91,7 @@ async function handleAction(action: string): Promise<void> {
     }
     setStatus(`已翻译 ${response.translations.length} 段文本。`);
   } catch (error) {
-    setStatus(error instanceof Error ? error.message : "翻译失败。");
+    setStatus(formatError(error));
   }
 }
 
@@ -207,6 +207,14 @@ function setStatus(message: string): void {
 
 function sendTranslate(items: TranslationItem[]): Promise<TranslateResponse> {
   return chrome.runtime.sendMessage({ type: "translate", items } satisfies TranslateMessage);
+}
+
+function formatError(error: unknown): string {
+  const message = error instanceof Error ? error.message : "翻译失败。";
+  if (message.includes("Extension context invalidated")) {
+    return "扩展刚更新过，请刷新当前 YouTube 页面后重试。";
+  }
+  return message;
 }
 
 function isWatchPage(): boolean {
