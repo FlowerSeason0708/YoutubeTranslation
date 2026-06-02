@@ -15,7 +15,9 @@ export function buildTranslationPrompt({ targetLanguage, items }: PromptInput): 
     `Translate each text item into ${targetLanguage}.`,
     "Return JSON only as an array of objects with exactly these fields: id, text.",
     "Do not add explanations, markdown fences, or extra keys.",
-    "Preserve links, timestamps, usernames, emoji, line breaks, and the original tone.",
+    "Do not translate names, @handles, account IDs, channel names, artist names, brand names, hashtags, URLs, timestamps, or track titles.",
+    "Preserve links, usernames, emoji, line breaks, punctuation, casing, and the original tone.",
+    "Only translate natural-language sentence content, captions, comments, subtitles, and visible video text that is already provided as text.",
     `Items: ${JSON.stringify(payload)}`
   ].join("\n");
 }

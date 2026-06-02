@@ -177,11 +177,10 @@ function collectCaptions(): Array<{ item: TranslationItem; element: HTMLElement 
 
 function collectInstagramText(): Array<{ item: TranslationItem; element: HTMLElement }> {
   const candidates = uniqueElements([
-    ...document.querySelectorAll<HTMLElement>("article h1"),
     ...document.querySelectorAll<HTMLElement>("article span[dir='auto']"),
     ...document.querySelectorAll<HTMLElement>("main article ul span[dir='auto']"),
     ...document.querySelectorAll<HTMLElement>("main article div[role='button'] span[dir='auto']")
-  ]).filter((element) => !isInsideToolbar(element));
+  ]).filter((element) => !isInsideToolbar(element) && !isSocialMetadataElement(element));
 
   return toTranslationTargets(candidates, "instagram-text", 60);
 }
@@ -191,7 +190,7 @@ function collectXText(): Array<{ item: TranslationItem; element: HTMLElement }> 
     ...document.querySelectorAll<HTMLElement>("article [data-testid='tweetText']"),
     ...document.querySelectorAll<HTMLElement>("article div[lang]"),
     ...document.querySelectorAll<HTMLElement>("[data-testid='cellInnerDiv'] [data-testid='tweetText']")
-  ]).filter((element) => !isInsideToolbar(element));
+  ]).filter((element) => !isInsideToolbar(element) && !isSocialMetadataElement(element));
 
   return toTranslationTargets(candidates, "x-text", 60);
 }
@@ -243,8 +242,31 @@ function shouldTranslateText(text: string): boolean {
   if (text.length < 2) {
     return false;
   }
-  const ignored = new Set(["更多", "回复", "关注", "查看全部", "显示更多", "Show more"]);
-  return !ignored.has(text);
+  const normalized = text.trim();
+  const ignored = new Set([
+    "更多",
+    "回复",
+    "关注",
+    "查看全部",
+    "显示更多",
+    "Show more",
+    "Reply",
+    "Follow",
+    "Following",
+    "Like",
+    "Share",
+    "Repost"
+  ]);
+  if (ignored.has(normalized)) {
+    return false;
+  }
+  if (/^@[\w.]{2,}$/.test(normalized)) {
+    return false;
+  }
+  if (/^\d+([,.]\d+)?[KkMm万]?$/.test(normalized)) {
+    return false;
+  }
+  return true;
 }
 
 function isVisible(element: HTMLElement): boolean {
@@ -254,6 +276,25 @@ function isVisible(element: HTMLElement): boolean {
 
 function isInsideToolbar(element: HTMLElement): boolean {
   return Boolean(element.closest(`#${ROOT_ID}`));
+}
+
+function isSocialMetadataElement(element: HTMLElement): boolean {
+  const text = getElementText(element);
+  if (/^@[\w.]{2,30}$/.test(text)) {
+    return true;
+  }
+  const link = element.closest<HTMLAnchorElement>("a[href]");
+  if (!link) {
+    return false;
+  }
+  const href = link.getAttribute("href") ?? "";
+  if (isInstagramPage()) {
+    return /^\/[\w.]+\/?$/.test(href) || href.includes("/explore/tags/");
+  }
+  if (isXPage()) {
+    return /^\/[\w]+\/?$/.test(href) || href.includes("/hashtag/");
+  }
+  return false;
 }
 
 function resetTranslations(): void {

@@ -18,6 +18,17 @@ describe("translation helpers", () => {
     expect(prompt).toContain("JSON");
   });
 
+  test("buildTranslationPrompt tells models not to translate names or account ids", () => {
+    const prompt = buildTranslationPrompt({
+      targetLanguage: "中文简体",
+      items: [{ id: "comment-1", text: "@solomun thanked Dom Dolla in Sydney." }]
+    });
+
+    expect(prompt).toContain("Do not translate names");
+    expect(prompt).toContain("@handles");
+    expect(prompt).toContain("account IDs");
+  });
+
   test("parseTranslatedItems rejects missing ids", () => {
     expect(() =>
       parseTranslatedItems('[{"id":"a","text":"甲"}]', ["a", "b"])
